@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChronoCalc - Time Calculator</title>
+    <style>
+        :root {
+            --primary: #7c3aed;
+            --secondary: #f472b6;
+            --background: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: var(--background);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: var(--text);
+            transition: background 0.3s ease;
+            position: relative;
+        }
+
+        .container {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+            margin: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .clock-container {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .digital-clock {
+            font-size: 2.5rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .date-display {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+
+        input, select, button {
+            padding: 0.8rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text);
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        input:focus, select:focus, button:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: 100%;
+            justify-content: center;
+        }
+
+        button:hover {
+            background: #6d28d9;
+            transform: translateY(-1px);
+        }
+
+        #history {
+            margin-top: 1.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .history-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.8rem;
+            border-radius: 0.5rem;
+            margin: 0.5rem 0;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideIn 0.3s ease;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: var(--card-bg);
+            padding: 0.5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1.5rem;
+            }
+            
+            .digital-clock {
+                font-size: 2rem;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
+    
+    <div class="container">
+        <div class="clock-container">
+            <div class="digital-clock" id="liveClock"></div>
+            <div class="date-display" id="currentDate"></div>
+        </div>
+
+        <div class="input-group">
+            <input type="time" id="timeInput" required>
+            <select id="operation">
+                <option value="add">➕ Add</option>
+                <option value="subtract">➖ Subtract</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <input type="number" id="hours" placeholder="Hours" min="0">
+            <input type="number" id="minutes" placeholder="Minutes" min="0" max="59">
+        </div>
+
+        <button onclick="calculateTime()">
+            <span>Calculate Time</span>
+            <span>⏳</span>
+        </button>
+
+        <div id="result" class="result-display"></div>
+
+        <div id="history">
+            <div class="history-header">History</div>
+        </div>
+    </div>
+
+    <script>
+        function updateDateTime() {
+            const now = new Date();
+            const options = { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit', 
+                hour12: true 
+            };
+            
+            document.getElementById('liveClock').textContent = now.toLocaleTimeString('en-US', options);
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        }
+
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+
+        function calculateTime() {
+            const baseTime = document.getElementById('timeInput').value;
+            const hours = parseInt(document.getElementById('hours').value) || 0;
+            const minutes = parseInt(document.getElementById('minutes').value) || 0;
+            const operation = document.getElementById('operation').value;
+
+            if (!baseTime) {
+                showResult('Please enter a valid start time', true);
+                return;
+            }
+
+            const [baseHours, baseMinutes] = baseTime.split(':').map(Number);
+            const date = new Date();
+            date.setHours(baseHours, baseMinutes, 0);
+
+            const totalMinutes = (hours * 60) + minutes;
+            const adjustment = operation === 'add' ? totalMinutes : -totalMinutes;
+
+            date.setMinutes(date.getMinutes() + adjustment);
+
+            const resultOptions = { 
+                hour: 'numeric', 
+                minute: '2-digit', 
+                hour12: true 
+            };
+            const result = date.toLocaleTimeString('en-US', resultOptions);
+
+            showResult(`Result: ${result}`);
+            addToHistory(baseTime, `${operation === 'add' ? '+' : '-'}${hours}h ${minutes}m`, result);
+        }
+
+        function showResult(text, isError = false) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = text;
+            resultDiv.style.color = isError ? '#ef4444' : '#34d399';
+            resultDiv.style.marginTop = '1rem';
+        }
+
+        function addToHistory(original, operation, result) {
+            const history = document.getElementById('history');
+            const entry = document.createElement('div');
+            entry.className = 'history-item';
+            entry.innerHTML = `
+                <span>${original}</span>
+                <span>${operation}</span>
+                <span>→ ${result}</span>
+            `;
+            history.insertBefore(entry, history.firstChild);
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const isDark = body.style.getPropertyValue('--background') === '#0f172a';
+            
+            if (isDark) {
+                body.style.setProperty('--background', '#f8fafc');
+                body.style.setProperty('--text', '#0f172a');
+                body.style.setProperty('--card-bg', 'rgba(0, 0, 0, 0.05)');
+            } else {
+                body.style.setProperty('--background', '#0f172a');
+                body.style.setProperty('--text', '#ffffff');
+                body.style.setProperty('--card-bg', 'rgba(255, 255, 255, 0.05)');
+            }
+        }
+    </script>
+</body>
+</html>
